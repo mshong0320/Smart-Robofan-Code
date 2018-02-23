@@ -18,7 +18,6 @@
 #define Input5 1
 #define Input6 2
 
-
 Pixy pixy;
 int angle = 0;
 Servo myservo;
@@ -29,7 +28,6 @@ float factor = 0.1;
 uint16_t blocks;
 double lightLVL;
 double tempout;
-
 
 void setup() {
   // put your setup code here, to run once:
@@ -51,9 +49,6 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  
-  
-  
   lightLVL=analogRead(lightSensor);
   tempout = analogRead(tempSensor);
   float voltage = tempout * 5.0;
@@ -64,9 +59,6 @@ void loop() {
   float temperatureF = (temperatureC * 9.0 / 5.0) + 32.0;
   Serial.print(temperatureF); 
   Serial.println(" degrees F");
-
-//  Serial.print("Current Temperature = ");
-//  Serial.println(tempout);
 
   int blocks = pixy.getBlocks();
   float wid = pixy.blocks[0].width;

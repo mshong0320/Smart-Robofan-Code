@@ -18,6 +18,7 @@
 #define Input5 1
 #define Input6 2
 
+int prevFanSpeed;
 Pixy pixy;
 int angle = 0;
 Servo myservo;
@@ -45,6 +46,7 @@ void setup() {
   pinMode(Input5, OUTPUT);
   pinMode(Input6, OUTPUT);
   pixy.init(); 
+  prevFanSpeed = 255;
 }
 
 void loop() {
@@ -60,6 +62,9 @@ void loop() {
   Serial.print(temperatureF); 
   Serial.println(" degrees F");
 
+//  Serial.print("Current Temperature = ");
+//  Serial.println(tempout);
+
   int blocks = pixy.getBlocks();
   float wid = pixy.blocks[0].width;
   float x_pos = pixy.blocks[0].x;
@@ -67,14 +72,18 @@ void loop() {
   //Serial.println(difference);
   //Serial.println(wid);
 
-  if (lightLVL == 0) {
+  if (temperatureC < 20.0) {
+    analogWrite(Enable4, 0);
+  }
+
+  if (lightLVL < 300) {
     analogWrite(Enable1, 0);
     analogWrite(Enable3, 0);
     analogWrite(Enable4, 0);
   }
 
-  if (lightLVL > 0) {
-    while (wid < 100 && blocks > 0) {
+  if (lightLVL > 300) {
+    if (wid < 100 && blocks > 0) {
       //Serial.println("Foward!!!");
       analogWrite(Enable1, 255);
       analogWrite(Enable3, 255);
@@ -85,42 +94,56 @@ void loop() {
       digitalWrite(Input4, LOW);
       digitalWrite(Input5, HIGH);
       digitalWrite(Input6, LOW);
+      prevFanSpeed = 255;
     }
 
+    if (wid < 150 && wid > 100 && blocks > 0) {
+      analogWrite(Enable1, 0);
+      analogWrite(Enable3, 0);
+      analogWrite(Enable4, prevFanSpeed);
+      digitalWrite(Input1, HIGH);
+      digitalWrite(Input2, LOW);
+      digitalWrite(Input3, HIGH);
+      digitalWrite(Input4, LOW);
+      digitalWrite(Input5, HIGH);
+      digitalWrite(Input6, LOW);
+    }
+    
     if (blocks == 0 ) {
       //Serial.println("Stopped...");
       analogWrite(Enable1, 0);
       analogWrite(Enable3, 0);
-      analogWrite(Enable4, 0);
+      analogWrite(Enable4, prevFanSpeed);
     }
   
-    while (wid > 100 && blocks > 0 ) {
-        //Serial.println("Backwarding!!");
+    if (wid > 150 && blocks > 0 ) {
+        //Serial.println("Backwards");
         analogWrite(Enable1, 255);
         analogWrite(Enable3, 255);
-        analogWrite(Enable4, 150);
+        analogWrite(Enable4, 50);
         digitalWrite(Input1, LOW);
         digitalWrite(Input2, HIGH);
         digitalWrite(Input3, LOW);
         digitalWrite(Input4, HIGH);
         digitalWrite(Input5, HIGH);
         digitalWrite(Input6, LOW);
-    }
+        prevFanSpeed = 100;
+     }
   
-    while (difference > 60.00 && blocks >0) {
-        //Serial.println("turning right!");
+    if (difference > 70.00 && blocks >0) {
+        //Serial.println("turning forward right!");
         analogWrite(Enable1, 150);
-        analogWrite(Enable3, 100);
+        analogWrite(Enable3, 0);
         digitalWrite(Input1, HIGH);
         digitalWrite(Input2, LOW);
         digitalWrite(Input3, LOW);
         digitalWrite(Input4, HIGH);
     }
   
-    while (difference < -60.00 && blocks > 0) {
-        //Serial.println("turning left!");
-        analogWrite(Enable1, 150);
-        analogWrite(Enable3, 100);
+    if (difference < -70.00 && blocks > 0) {
+        //Serial.println("turning forward left!");
+        analogWrite(Enable1, 0);
+        analogWrite(Enable3, 150);
         digitalWrite(Input1, LOW);
         digitalWrite(Input2, HIGH);
         digitalWrite(Input3, HIGH);
@@ -128,4 +151,32 @@ void loop() {
     }
   }
   delay(30);
+}
+
+int getSpeed(int width, int color, int temp) {
+  // two temp thresholds, two distance thresholds (close far), color high low
+  // high medium-high, medium-low, low fan settings
+  //color 1 is fast, 2 is slow
+  if (color == 1 || temp > 70) {
+    //fast
+    return 255;
+  } else {
+
+    if (width < 20) {
+      return 255;
+    } else if (width < 50) {
+      return 200;
+    } else if (width < 100) {
+      return 150;
+    } else if (width < 200) {
+      return 75;
+    } else {
+      return 50;
+    }
+    //slow
+    if (width < 100) {
+      return 100;
+    }
+    return 50;
+  }
 }
